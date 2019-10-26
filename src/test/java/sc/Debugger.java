@@ -1,13 +1,19 @@
 package sc;
 
 import java.io.IOException;
-import java.io.StringWriter;
+import static java.util.Optional.of;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.Test;
+
+import static java.util.Arrays.asList;
 
 /**
  * A "dummy" integration test for debugging the RequestHandler directly in Solr. 
@@ -22,36 +28,61 @@ public class Debugger extends BaseIntegrationTest {
 	 */
 	@Test
     public void start() throws Exception {
-        System.out.println("Press [Enter] to stop Solr");
+		String titleV1 = "This is the first version of the title";
+		String titleV2 = "And this is the second version of the title, which contains some changes.";
 
-        SolrInputDocument doc1 = new SolrInputDocument();
-        doc1.setField("id", "1");
-        doc1.setField("title", "pippo pluto paperino");
+		List<String> authors = asList("Massimiliano Branca", "Mario Rossi", "Giuseppe Verdi");
 
-        SolrInputDocument doc2 = new SolrInputDocument();
-        doc2.setField("id", "2");
-        doc2.setField("title", "the first world power should be united states of america");
+        SolrInputDocument document = new SolrInputDocument();
+        document.setField("id", "1");
+        document.setField("title", titleV2);
+        document.setField("author", authors);
 
-        SolrInputDocument doc3 = new SolrInputDocument();
-        doc3.setField("id", "3");
-        doc3.setField("title", "the first world power should be united states america of ");
-
-        getSolrClient().add(doc1);
-        getSolrClient().add(doc2);
-        getSolrClient().add(doc3);
+        getSolrClient().add(document);
         getSolrClient().commit();
 
-        System.out.println("**************");
+        /*
+        SolrQuery query = new SolrQuery("id:1");
 
-        //SolrQuery query = new SolrQuery("We are the +(usa \"united states of america\")");
-        SolrQuery query = new SolrQuery("multimedia messaging service");
-        //query.set("mm", "100");
+        assertEquals(
+        		titleV1,
+				of(getSolrClient().query(query))
+						.map(QueryResponse::getResults)
+						.map(SolrDocumentList::iterator)
+						.map(Iterator::next)
+						.map(doc -> doc.getFieldValue("title"))
+						.orElseThrow(IllegalStateException::new));
 
-        QueryResponse response = getSolrClient().query(query);
+		// Replaces only the title
+		SolrInputDocument withTitleReplacement = new SolrInputDocument();
+		withTitleReplacement.setField("id", "1");
 
-        System.out.println(response);
-        System.out.println(response.getDebugMap().get("parsedquery"));
+		Map<String, String> partialUpdatePayload = new HashMap<>();
+		partialUpdatePayload.put("set", titleV2);
 
-        if(response.getResults().getNumFound() != 1) System.err.println("NOOOOOOOO!!!!");
-    }
+		withTitleReplacement.setField("title", partialUpdatePayload);
+
+		getSolrClient().add(withTitleReplacement);
+		getSolrClient().commit();
+
+		assertEquals(
+				titleV2,
+				of(getSolrClient().query(query))
+						.map(QueryResponse::getResults)
+						.map(SolrDocumentList::iterator)
+						.map(Iterator::next)
+						.map(doc -> doc.getFieldValue("title"))
+						.orElseThrow(IllegalStateException::new));
+*/
+		SolrQuery query = new SolrQuery("title:changse");
+		QueryResponse response = getSolrClient().query(query);
+
+		System.out.println(response);
+
+		query = new SolrQuery("title:change");
+		response = getSolrClient().query(query);
+
+		System.out.println(response);
+
+	}
 }
